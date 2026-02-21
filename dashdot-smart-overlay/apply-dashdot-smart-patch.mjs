@@ -30,10 +30,29 @@ type SmartData = {
 const execAsync = promisify(execChild);
 const SMART_CACHE_DURATION_MS = 60_000;
 const SMART_SATA_DEVICE_REGEX = /^\\/dev\\/sd[a-z]+$/i;
+const SMART_NVME_DEVICE_REGEX = /^\\/dev\\/nvme\\d+n\\d+$/i;
 const smartDataCache = new Map<string, SmartData & { timestamp: number }>();
 
-const normalizeDevicePath = (device: string) =>
-  device.startsWith('/dev/') ? device : \`/dev/\${device}\`;
+const toBaseDevicePath = (devicePath: string) => {
+  if (/^\\/dev\\/sd[a-z]+\\d+$/i.test(devicePath)) {
+    return devicePath.replace(/\\d+$/i, '');
+  }
+
+  if (/^\\/dev\\/nvme\\d+n\\d+p\\d+$/i.test(devicePath)) {
+    return devicePath.replace(/p\\d+$/i, '');
+  }
+
+  return devicePath;
+};
+
+const normalizeSmartDevicePath = (device: string) => {
+  const normalized = device.startsWith('/dev/') ? device : \`/dev/\${device}\`;
+  return toBaseDevicePath(normalized);
+};
+
+const isSupportedSmartDevice = (devicePath: string) =>
+  SMART_SATA_DEVICE_REGEX.test(devicePath) ||
+  SMART_NVME_DEVICE_REGEX.test(devicePath);
 
 const parseSmartTemperature = (stdout: string): number | undefined => {
   for (const line of stdout.split('\\n')) {
@@ -45,6 +64,22 @@ const parseSmartTemperature = (stdout: string): number | undefined => {
         if (!Number.isNaN(temperature)) {
           return temperature;
         }
+      }
+    }
+
+    const nvmeTempMatch = line.match(/^\\s*Temperature(?:\\s+Sensor\\s+\\d+)?:\\s*(\\d+)\\s*C(?:elsius)?/i);
+    if (nvmeTempMatch) {
+      const temperature = Number.parseInt(nvmeTempMatch[1], 10);
+      if (!Number.isNaN(temperature)) {
+        return temperature;
+      }
+    }
+
+    const nvmeValueTempMatch = line.match(/^\\s*Temperature(?:\\s+Sensor\\s+\\d+)?\\s+.*?(\\d+)\\s*C(?:elsius)?/i);
+    if (nvmeValueTempMatch) {
+      const temperature = Number.parseInt(nvmeValueTempMatch[1], 10);
+      if (!Number.isNaN(temperature)) {
+        return temperature;
       }
     }
   }
@@ -92,33 +127,39 @@ const getSmartData = async (devicePath: string): Promise<SmartData> => {
     };
   }
 
+  let temperature: number | undefined;
+  let overallStatus: string | undefined;
+  let healthy: boolean | undefined;
+
   try {
-    const [attributesResult, healthResult] = await Promise.all([
-      execAsync(\`smartctl -A \${devicePath}\`),
-      execAsync(\`smartctl -H \${devicePath}\`),
-    ]);
-
-    const temperature = parseSmartTemperature(attributesResult.stdout);
-    const healthData = parseSmartHealth(healthResult.stdout);
-
-    const value = {
-      temperature,
-      overallStatus: healthData.overallStatus,
-      healthy: healthData.healthy,
-      timestamp: now,
-    };
-
-    smartDataCache.set(devicePath, value);
-
-    return {
-      temperature,
-      overallStatus: healthData.overallStatus,
-      healthy: healthData.healthy,
-    };
+    const attributesResult = await execAsync(\`smartctl -A \${devicePath}\`);
+    temperature = parseSmartTemperature(attributesResult.stdout);
   } catch (_error) {
-    smartDataCache.set(devicePath, { timestamp: now });
-    return {};
+    temperature = undefined;
   }
+
+  try {
+    const healthResult = await execAsync(\`smartctl -H \${devicePath}\`);
+    const healthData = parseSmartHealth(healthResult.stdout);
+    overallStatus = healthData.overallStatus;
+    healthy = healthData.healthy;
+  } catch (_error) {
+    overallStatus = undefined;
+    healthy = undefined;
+  }
+
+  smartDataCache.set(devicePath, {
+    temperature,
+    overallStatus,
+    healthy,
+    timestamp: now,
+  });
+
+  return {
+    temperature,
+    overallStatus,
+    healthy,
+  };
 };
 
 export class DynamicStorageMapper {
@@ -218,8 +259,8 @@ export class DynamicStorageMapper {
 
         if (CONFIG.enable_smart_temps && disks.length > 0) {
           const smartCandidates = [
-            ...new Set(disks.map((d) => normalizeDevicePath(d.device))),
-          ].filter((d) => SMART_SATA_DEVICE_REGEX.test(d));
+            ...new Set(disks.map((d) => normalizeSmartDevicePath(d.device))),
+          ].filter((d) => isSupportedSmartDevice(d));
 
           if (smartCandidates.length > 0) {
             const smartData = await Promise.all(

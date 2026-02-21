@@ -24,7 +24,7 @@ replaceOrThrow(
 
 replaceOrThrow(
   "      smart: [], // API endpoint does not provide S.M.A.R.T data.",
-  "      smart: info.storage.map((storage, index) => ({\n        deviceName: `Storage ${index + 1}: (${storage.disks.map((disk) => disk.device).join(\", \")})`,\n        temperature: storageLoad[index]?.temperature ?? null,\n        overallStatus: storageLoad[index]?.overallStatus ?? \"N/A\",\n        healthy: storageLoad[index]?.healthy ?? false,\n      })),",
+  "      smart: info.storage.map((storage, index) => ({\n        deviceName: `Storage ${index + 1}: (${storage.disks.map((disk) => disk.device).join(\", \")})`,\n        temperature: storageLoad[index]?.temperature,\n        overallStatus: storageLoad[index]?.overallStatus ?? \"N/A\",\n        healthy: storageLoad[index]?.healthy ?? false,\n      })),",
   "smart mapping",
 );
 
