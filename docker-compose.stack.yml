@@ -1,0 +1,31 @@
+services:
+  dashdot:
+    image: ghcr.io/batuhancelasun/dashdot-smart:latest
+    container_name: dashdot
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "3001:3001"
+    environment:
+      DASHDOT_ENABLE_CPU_TEMPS: "true"
+      DASHDOT_ENABLE_SMART_TEMPS: "true"
+      DASHDOT_RUNNING_IN_DOCKER: "true"
+    volumes:
+      - /:/mnt/host:ro
+      - /dev:/dev
+
+  homarr:
+    image: ghcr.io/batuhancelasun/homarr-smart:latest
+    container_name: homarr
+    restart: unless-stopped
+    ports:
+      - "7575:7575"
+    environment:
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
+      AUTH_PROVIDERS: credentials
+      DB_DIALECT: sqlite
+      DB_DRIVER: better-sqlite3
+      DB_URL: /appdata/db/db.sqlite
+      REDIS_IS_EXTERNAL: "false"
+    volumes:
+      - /homarr:/appdata

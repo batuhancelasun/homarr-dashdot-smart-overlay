@@ -1,0 +1,20 @@
+services:
+  dashdot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        DASHDOT_REF: main
+    image: dashdot-smart:local
+    container_name: dashdot-smart
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "3001:3001"
+    environment:
+      DASHDOT_ENABLE_CPU_TEMPS: "true"
+      DASHDOT_ENABLE_SMART_TEMPS: "true"
+      DASHDOT_RUNNING_IN_DOCKER: "true"
+    volumes:
+      - /:/mnt/host:ro
+      - /dev:/dev

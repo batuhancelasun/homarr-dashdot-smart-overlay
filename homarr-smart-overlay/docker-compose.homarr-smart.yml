@@ -1,0 +1,21 @@
+services:
+  homarr:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        HOMARR_REF: main
+    image: homarr-smart:local
+    container_name: homarr-smart
+    restart: unless-stopped
+    ports:
+      - "7575:7575"
+    environment:
+      TZ: Europe/Istanbul
+      AUTH_PROVIDERS: credentials
+      DB_DIALECT: sqlite
+      DB_DRIVER: better-sqlite3
+      DB_URL: /appdata/db/db.sqlite
+      REDIS_IS_EXTERNAL: "false"
+    volumes:
+      - ./homarr_appdata:/appdata
