@@ -32,6 +32,8 @@ const SMART_CACHE_DURATION_MS = 60_000;
 const SMART_SATA_DEVICE_REGEX = /^\\/dev\\/sd[a-z]+$/i;
 const SMART_NVME_DEVICE_REGEX = /^\\/dev\\/nvme\\d+n\\d+$/i;
 const smartDataCache = new Map<string, SmartData & { timestamp: number }>();
+const SMART_TEMPS_ENABLED =
+  process.env.DASHDOT_ENABLE_SMART_TEMPS !== 'false';
 
 const toBaseDevicePath = (devicePath: string) => {
   if (/^\\/dev\\/sd[a-z]+\\d+$/i.test(devicePath)) {
@@ -286,7 +288,7 @@ export class DynamicStorageMapper {
         let overallStatus: string | undefined;
         let healthy: boolean | undefined;
 
-        if (CONFIG.enable_smart_temps && disks.length > 0) {
+        if (SMART_TEMPS_ENABLED && disks.length > 0) {
           const smartCandidates = [
             ...new Set(disks.map((d) => normalizeSmartDevicePath(d.device))),
           ].filter((d) => isSupportedSmartDevice(d));
