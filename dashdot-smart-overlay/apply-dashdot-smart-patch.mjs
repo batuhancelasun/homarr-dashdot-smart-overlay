@@ -56,9 +56,12 @@ const isSupportedSmartDevice = (devicePath: string) =>
 
 const parseSmartTemperature = (stdout: string): number | undefined => {
   for (const line of stdout.split('\\n')) {
-    if (/^\\s*194\\s+/.test(line) && /Temperature_Celsius|Temperature_Internal/.test(line)) {
+    if (
+      /^\\s*(190|194|231)\\s+/.test(line) &&
+      /Temperature_Celsius|Temperature_Internal|Airflow_Temperature_Cel/.test(line)
+    ) {
       const cols = line.trim().split(/\\s+/);
-      const rawValue = cols[9];
+      const rawValue = cols[9] ?? cols[cols.length - 1];
       if (rawValue) {
         const temperature = Number.parseInt(rawValue, 10);
         if (!Number.isNaN(temperature)) {
@@ -90,9 +93,9 @@ const parseSmartTemperature = (stdout: string): number | undefined => {
 const parseSmartHealth = (
   stdout: string,
 ): { overallStatus?: string; healthy?: boolean } => {
-  const healthMatch = stdout.match(
-    /SMART overall-health self-assessment test result:\\s*([A-Z_]+)/i,
-  );
+  const healthMatch =
+    stdout.match(/SMART overall-health self-assessment test result:\\s*([A-Z_]+)/i) ??
+    stdout.match(/SMART Health Status:\\s*([A-Z_]+)/i);
 
   if (!healthMatch) {
     return {};
@@ -106,6 +109,10 @@ const parseSmartHealth = (
 
   if (status === 'PASSED') {
     return { overallStatus: 'PASSED', healthy: true };
+  }
+
+  if (status === 'OK') {
+    return { overallStatus: 'OK', healthy: true };
   }
 
   if (status === 'FAILED') {
