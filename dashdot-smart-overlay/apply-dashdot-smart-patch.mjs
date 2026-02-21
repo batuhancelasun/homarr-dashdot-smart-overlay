@@ -134,8 +134,16 @@ const getSmartData = async (devicePath: string): Promise<SmartData> => {
   try {
     const attributesResult = await execAsync(\`smartctl -A \${devicePath}\`);
     temperature = parseSmartTemperature(attributesResult.stdout);
-  } catch (_error) {
-    temperature = undefined;
+  } catch (error) {
+    const stdout =
+      error &&
+      typeof error === 'object' &&
+      'stdout' in error &&
+      typeof (error as { stdout?: unknown }).stdout === 'string'
+        ? (error as { stdout: string }).stdout
+        : '';
+
+    temperature = stdout.length > 0 ? parseSmartTemperature(stdout) : undefined;
   }
 
   try {
@@ -143,9 +151,23 @@ const getSmartData = async (devicePath: string): Promise<SmartData> => {
     const healthData = parseSmartHealth(healthResult.stdout);
     overallStatus = healthData.overallStatus;
     healthy = healthData.healthy;
-  } catch (_error) {
-    overallStatus = undefined;
-    healthy = undefined;
+  } catch (error) {
+    const stdout =
+      error &&
+      typeof error === 'object' &&
+      'stdout' in error &&
+      typeof (error as { stdout?: unknown }).stdout === 'string'
+        ? (error as { stdout: string }).stdout
+        : '';
+
+    if (stdout.length > 0) {
+      const healthData = parseSmartHealth(stdout);
+      overallStatus = healthData.overallStatus;
+      healthy = healthData.healthy;
+    } else {
+      overallStatus = undefined;
+      healthy = undefined;
+    }
   }
 
   smartDataCache.set(devicePath, {

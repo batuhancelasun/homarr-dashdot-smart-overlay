@@ -21,7 +21,7 @@ services:
     ports:
       - "7575:7575"
     environment:
-      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-changeme-change-this-in-production}
       AUTH_PROVIDERS: credentials
       DB_DIALECT: sqlite
       DB_DRIVER: better-sqlite3

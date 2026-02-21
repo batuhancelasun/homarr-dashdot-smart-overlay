@@ -9,7 +9,7 @@ This repository contains only patch overlays and the GHCR workflow.
   - Adds `/load/storage-extended` plus SMART temperature/health data.
 - `homarr-smart-overlay/`
   - Clones upstream Homarr during build and applies the DashDot integration patch.
-- `.github/workflows/ghcr-images.yml`
+- `.github/workflows/smart-overlay-release.yml`
   - Builds and pushes both images to GHCR on every push to `main`.
 
 ## GHCR Images
@@ -30,7 +30,11 @@ Run both services together with one stack.
 
 ### 1) Create an encryption key
 
-Set `SECRET_ENCRYPTION_KEY` directly in the compose file (example below).
+Optional (recommended for production):
+
+```bash
+export SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32)
+```
 
 ### 2) Use this compose file
 
@@ -58,7 +62,7 @@ services:
     ports:
       - "7575:7575"
     environment:
-      SECRET_ENCRYPTION_KEY: "changeme" # use: openssl rand -hex 32
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-changeme-change-this-in-production}
       AUTH_PROVIDERS: credentials
       DB_DIALECT: sqlite
       DB_DRIVER: better-sqlite3
@@ -72,6 +76,12 @@ services:
 
 ```bash
 docker compose up -d
+```
+
+One-liner (recommended):
+
+```bash
+SECRET_ENCRYPTION_KEY=$(openssl rand -hex 32) docker compose -f docker-compose.stack.yml up -d
 ```
 
 If you prefer, you can also use the included [docker-compose.stack.yml](docker-compose.stack.yml).
