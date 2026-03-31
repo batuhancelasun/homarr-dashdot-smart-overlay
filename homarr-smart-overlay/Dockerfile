@@ -1,7 +1,7 @@
 # Build Homarr from upstream source and apply a tiny DashDot SMART patch at build time.
 # This avoids maintaining a full fork while still keeping compatibility with new releases.
 
-FROM node:24.13.1-alpine AS builder
+FROM node:24.14.0-alpine AS builder
 
 RUN apk add --no-cache git libc6-compat curl bash
 WORKDIR /src
@@ -20,7 +20,7 @@ ARG CI=true
 ARG DISABLE_REDIS_LOGS=true
 RUN corepack enable pnpm && pnpm build
 
-FROM node:24.13.1-alpine AS runner
+FROM node:24.14.0-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache redis nginx bash gettext su-exec openssl
@@ -64,5 +64,5 @@ ENV AUTH_PROVIDERS='credentials'
 ENV REDIS_IS_EXTERNAL='false'
 ENV NODE_ENV='production'
 
-ENTRYPOINT [ "/app/entrypoint.sh" ]
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["sh", "run.sh"]
