@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     privileged: true
     ports:
-      - "3001:3001"
+      - "3031:3001"
     environment:
       DASHDOT_ENABLE_CPU_TEMPS: "true"
       DASHDOT_ENABLE_SMART_TEMPS: "true"

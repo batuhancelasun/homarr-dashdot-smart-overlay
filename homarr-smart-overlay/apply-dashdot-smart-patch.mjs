@@ -72,7 +72,7 @@ replaceOrThrow(
 
 replaceOrThrow(
   "const networkLoadApi = z.object({\n  up: z.number().min(0),\n  down: z.number().min(0),\n});",
-  "const networkLoadApi = z.object({\n  up: z.number().min(0),\n  down: z.number().min(0),\n});\n\ntype StorageLoadEntry = {\n  load: number;\n  temperature?: number;\n};\n\ntype StorageLoadExtendedApi = StorageLoadEntry[];",
+  "const networkLoadApi = z.object({\n  up: z.number().min(0),\n  down: z.number().min(0),\n});\n\ntype StorageLoadEntry = {\n  load: number;\n  temperature?: number;\n  overallStatus?: string;\n  healthy?: boolean;\n};\n\ntype StorageLoadExtendedApi = StorageLoadEntry[];",
   "storage load types",
 );
 
