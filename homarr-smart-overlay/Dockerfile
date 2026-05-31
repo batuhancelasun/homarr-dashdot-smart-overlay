@@ -42,8 +42,6 @@ RUN mkdir -p /var/cache/nginx && \
 COPY --from=builder /src/apps/nextjs/next.config.ts .
 COPY --from=builder /src/apps/nextjs/package.json .
 
-COPY --from=builder /src/apps/tasks/tasks.cjs ./apps/tasks/tasks.cjs
-COPY --from=builder /src/apps/websocket/wssServer.cjs ./apps/websocket/wssServer.cjs
 COPY --from=builder /src/node_modules/better-sqlite3/build/Release/better_sqlite3.node /app/build/better_sqlite3.node
 
 COPY --from=builder /src/packages/db/migrations ./db/migrations
